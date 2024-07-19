@@ -1,0 +1,52 @@
+import os
+import base64
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
+# Set the encryption key (should be a secret key)
+encryption_key = os.urandom(32)
+
+# Set the initialization vector (IV) for CBC mode
+iv = os.urandom(16)
+
+def encrypt_credit_card_info(credit_card_info):
+    # Create a cipher context
+    cipher = Cipher(algorithms.AES(encryption_key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    # Pad the credit card information
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(credit_card_info.encode()) + padder.finalize()
+
+    # Encrypt the padded data
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+
+    # Return the encrypted data as a base64-encoded string
+    return base64.b64encode(encrypted_data).decode()
+
+def decrypt_credit_card_info(encrypted_data):
+    # Create a cipher context
+    cipher = Cipher(algorithms.AES(encryption_key), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+
+    # Decode the base64-encoded encrypted data
+    encrypted_data = base64.b64decode(encrypted_data)
+
+    # Decrypt the encrypted data
+    decrypted_padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+
+    # Unpad the decrypted data
+    unpadder = padding.PKCS7(128).unpadder()
+    credit_card_info = unpadder.update(decrypted_padded_data) + unpadder.finalize()
+
+    # Return the decrypted credit card information as a string
+    return credit_card_info.decode()
+
+# Example usage:
+credit_card_info = input("enter the credit card info")
+encrypted_data = encrypt_credit_card_info(credit_card_info)
+print("Encrypted credit card info:", encrypted_data)
+
+decrypted_data = decrypt_credit_card_info(encrypted_data)
+print("Decrypted credit card info:", decrypted_data)
